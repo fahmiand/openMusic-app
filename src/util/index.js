@@ -5,7 +5,11 @@ const mapDBToModel = ({
   performer,
   genre,
   duration,
-  album_id
+  username,
+  name,
+  owner,
+  playlist_id,
+  song_id,
 }) => ({
   id,
   title,
@@ -13,7 +17,15 @@ const mapDBToModel = ({
   performer,
   genre,
   duration,
-  albumId: album_id
+  username,
+  name,
+  owner,
+  playlistId: playlist_id,
+  songId: song_id
 })
 
-module.exports = { mapDBToModel }
+const mapPlaylistActive = (playlistData, active) => ({
+  playlistId: playlistData,
+  activities: active
+})
+module.exports = { mapDBToModel, mapPlaylistActive }

@@ -30,15 +30,31 @@ const playlists = require('./api/playlists/index')
 const PlaylistsService = require('./services/postgres/PlaylistsService')
 const PlaylistsValidator = require('./validator/playlists')
 
+// ? playlistSong
+const playlistsongs = require('./api/playlistsong/index')
+const PlaylistSongsService = require('./services/postgres/PlaylistSongsService')
+const PlaylistSongsValidator = require('./validator/playlistsong')
+
+// ? Collaborations
+const collaborations = require('./api/collaborations')
+const CollaborationsService = require('./services/postgres/CollaborationsService')
+const CollaborationsValidator = require('./validator/collaborations')
+
+// ? PlaylistActivities
+const PlaylistActivitasService = require('./services/postgres/PlaylistActivitasService')
+
 // ! costumer Error
 const ClientError = require('./exceptions/ClientError')
 
 const init = async () => {
+  const playlistActivities = new PlaylistActivitasService()
+  const collaborationsService = new CollaborationsService()
   const albumsService = new AlbumsService()
   const songsService = new SongsService()
   const usersService = new UsersService()
   const authenticationsService = new AuthenticationsService()
-  const playlistsService = new PlaylistsService()
+  const playlistsService = new PlaylistsService(collaborationsService)
+  const playlistSongsService = new PlaylistSongsService(playlistActivities)
 
   const server = Hapi.server({
     port: process.env.PORT,
@@ -58,8 +74,8 @@ const init = async () => {
   ])
 
   //* mendefinisikan strategi autentikasi jwt
-  server.auth.strategy('omsapp_jwt', 'jwt', {
-    key: process.env.ACCESS_TOKEN_KEY,
+  server.auth.strategy('openmusic_jwt', 'jwt', {
+    keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
       aud: false,
       iss: false,
@@ -108,8 +124,25 @@ const init = async () => {
     {
       plugin: playlists,
       options: {
-        serivice: playlistsService,
+        service: playlistsService,
         validator: PlaylistsValidator
+      }
+    },
+    {
+      plugin: playlistsongs,
+      options: {
+        playlistsService,
+        playlistSongsService,
+        playlistActivities,
+        validator: PlaylistSongsValidator
+      }
+    },
+    {
+      plugin: collaborations,
+      options: {
+        collaborationsService,
+        playlistsService,
+        validator: CollaborationsValidator
       }
     }
   ])
