@@ -66,8 +66,8 @@ class PlaylistSongsService {
       throw new NotFoundError('Song Id tidak ditemukan')
     }
     const query = {
-      text: 'DELETE FROM playlistsongs WHERE playlist_id = $1',
-      values: [playlistId]
+      text: 'DELETE FROM playlistsongs WHERE playlist_id = $1 AND song_id = $2 RETURNING id',
+      values: [playlistId, songId]
     }
 
     const result = await this._pool.query(query)
