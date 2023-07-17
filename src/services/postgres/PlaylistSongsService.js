@@ -12,11 +12,9 @@ class PlaylistSongsService {
   async addPlaylistSong (playlistId, { songId }, credentialId) {
     const id = `playlistsong-${nanoid(16)}`
 
-    const querySongs = await this._pool.query(`select * from songs where id = '${songId}'`)
+    const resultSongs = await this._pool.query(`select * from songs where id = '${songId}'`)
 
-    const resultSongs = querySongs.rowCount
-
-    if (!resultSongs) {
+    if (!resultSongs.rowCount) {
       throw new NotFoundError('Song Id tidak ditemukan')
     }
     const query = {
@@ -35,12 +33,12 @@ class PlaylistSongsService {
     return result.rows[0].id
   }
 
-  async getPlaylistSong (id, owner) {
+  async getPlaylistSong (id) {
     const query1 = {
       text: `SELECT playlists.id, name, users.username FROM playlists
-              INNER jOIN users ON users.id = playlists.owner
-              WHERE playlists.owner = $1 AND playlists.id = $2`,
-      values: [owner, id]
+              INNER JOIN users ON playlists.owner = users.id
+              WHERE playlists.id = $1`,
+      values: [id]
     }
 
     const query2 = {
@@ -66,8 +64,8 @@ class PlaylistSongsService {
       throw new NotFoundError('Song Id tidak ditemukan')
     }
     const query = {
-      text: 'DELETE FROM playlistsongs WHERE playlist_id = $1',
-      values: [playlistId]
+      text: 'DELETE FROM playlistsongs WHERE playlist_id = $1 AND song_id = $2 RETURNING id',
+      values: [playlistId, songId]
     }
 
     const result = await this._pool.query(query)

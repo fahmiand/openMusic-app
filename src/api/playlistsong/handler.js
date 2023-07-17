@@ -36,13 +36,11 @@ class PlaylistSongsHandler {
     const { id: playlistId } = request.params
 
     await this._playlistsService.verifyPlaylistAccess(playlistId, credentialId)
-    const playlist = await this._service.getPlaylistSong(playlistId, credentialId)
+    const playlist = await this._service.getPlaylistSong(playlistId)
 
     return {
       status: 'success',
-      data: {
-        playlist
-      }
+      data: { playlist }
     }
   }
 
