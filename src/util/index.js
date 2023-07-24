@@ -7,9 +7,7 @@ const mapDBToModel = ({
   duration,
   username,
   name,
-  owner,
-  playlist_id,
-  song_id,
+  owner
 }) => ({
   id,
   title,
@@ -19,9 +17,7 @@ const mapDBToModel = ({
   duration,
   username,
   name,
-  owner,
-  playlistId: playlist_id,
-  songId: song_id
+  owner
 })
 
 const mapPlaylistActive = (playlistData, active) => ({
