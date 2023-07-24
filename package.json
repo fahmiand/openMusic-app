@@ -6,7 +6,11 @@
   "scripts": {
     "start": "nodemon ./src/server",
     "migrate": "node-pg-migrate",
+<<<<<<< HEAD
     "lint": "eslint ./"
+=======
+    "lint": "./"
+>>>>>>> 9534b455ed738e18523e80a646830eaf2202ebdd
   },
   "author": "",
   "license": "ISC",
