@@ -72,6 +72,19 @@ class AlbumsService {
       throw new NotFoundError('Albums gagal dihapus, Id tidak ditemukan!')
     }
   }
+
+  async addAlbumCover (id, fileLocation) {
+    const query = {
+      text: 'UPDATE albums SET "coverUrl" = $1 WHERE id = $2 RETURNING id',
+      values: [fileLocation, id]
+    }
+
+    const result = await this._pool.query(query)
+
+    if (!result.rowCount) {
+      throw new NotFoundError('Album tidak ditemukan')
+    }
+  }
 }
 
 module.exports = AlbumsService

@@ -1,8 +1,7 @@
-// TODO mengimpor dotenv dan melankankonfigurasinya
-require('dotenv').config()
-
 const Hapi = require('@hapi/hapi')
 const Jwt = require('@hapi/jwt')
+const Inert = require('@hapi/inert')
+const path = require('path')
 
 // ? songs
 const songs = require('./api/songs/index')
@@ -43,10 +42,29 @@ const CollaborationsValidator = require('./validator/collaborations')
 // ? PlaylistActivities
 const PlaylistActivitasService = require('./services/postgres/PlaylistActivitasService')
 
+// ? Exports
+const _esports = require('./api/exports/index')
+const ProducerService = require('./services/rabbitmq/ProducerService')
+const ExportsValidator = require('./validator/exports')
+
+// ? uploads
+const uploads = require('./api/uploads')
+const StorageService = require('./services/storage/storageService')
+const UploadsValidator = require('./validator/uploads')
+
+// ? User album likes
+const userAlbumLikes = require('./api/userAlbumLikes')
+const UserAlbumLikesService = require('./services/postgres/UserAlbumLikesService')
+
+// ? Cache
+const CacheService = require('./services/redis/CacheService')
+
 // ! costumer Error
 const ClientError = require('./exceptions/ClientError')
+const config = require('./util/config')
 
 const init = async () => {
+  const cacheService = new CacheService()
   const playlistActivities = new PlaylistActivitasService()
   const collaborationsService = new CollaborationsService()
   const albumsService = new AlbumsService()
@@ -55,10 +73,14 @@ const init = async () => {
   const authenticationsService = new AuthenticationsService()
   const playlistsService = new PlaylistsService(collaborationsService)
   const playlistSongsService = new PlaylistSongsService(playlistActivities)
+  const storageService = new StorageService(
+    path.resolve(__dirname, 'api/uploads/file/images')
+  )
+  const userAlbumLikesService = new UserAlbumLikesService(cacheService)
 
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.HOST,
+    port: config.app.port,
+    host: config.app.host,
     routes: {
       cors: {
         origin: ['*']
@@ -70,17 +92,20 @@ const init = async () => {
   await server.register([
     {
       plugin: Jwt
+    },
+    {
+      plugin: Inert
     }
   ])
 
   //* mendefinisikan strategi autentikasi jwt
   server.auth.strategy('openmusic_jwt', 'jwt', {
-    keys: process.env.ACCESS_TOKEN_KEY,
+    keys: config.token.keys,
     verify: {
       aud: false,
       iss: false,
       sub: false,
-      maxAgeSec: process.env.ACCESS_TOKEN_AGE
+      maxAgeSec: config.token.maxAgeSec
     },
     validate: (artifacts) => ({
       isValid: true,
@@ -143,6 +168,28 @@ const init = async () => {
         collaborationsService,
         playlistsService,
         validator: CollaborationsValidator
+      }
+    },
+    {
+      plugin: _esports,
+      options: {
+        playlistsService,
+        service: ProducerService,
+        validator: ExportsValidator
+      }
+    },
+    {
+      plugin: uploads,
+      options: {
+        service: storageService,
+        validator: UploadsValidator,
+        albumsService
+      }
+    },
+    {
+      plugin: userAlbumLikes,
+      options: {
+        service: userAlbumLikesService
       }
     }
   ])
